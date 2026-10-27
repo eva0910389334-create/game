@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG 剪刀石頭布冒險大對決</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #f1f5f9;
+        }
+        .rpg-font {
+            font-family: 'DotGothic16', monospace;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+            50% { box-shadow: 0 0 35px rgba(245, 158, 11, 0.7); }
+        }
+        .animate-glow {
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes bounce-short {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-action {
+            animation: bounce-short 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-2xl bg-slate-900/90 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-slate-800/90 border-b border-slate-700 p-6 text-center">
+            <h1 class="rpg-font text-3xl md:text-4xl text-amber-400 tracking-wider mb-1">✊✋✌️ 傳說剪刀石頭布 RPG</h1>
+            <p class="text-slate-400 text-sm">先獲得 3 勝的一方成為地下城最終大師！</p>
+        </header>
+
+        <!-- Screen 1: Login & Equipment Selection -->
+        <div id="setup-screen" class="p-6 md:p-8 space-y-6">
+            <div class="space-y-3">
+                <label class="block text-sm font-medium text-slate-300">冒險者名字</label>
+                <input type="text" id="player-name" placeholder="例如：勇者阿雷" 
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-400 transition-colors">
+            </div>
+
+            <div class="space-y-3">
+                <label class="block text-sm font-medium text-slate-300">選擇專屬裝備</label>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <button type="button" onclick="selectEquipment('黃金鍵盤', this)" class="equipment-btn p-3 bg-slate-800 border border-amber-400 rounded-xl text-left transition-all focus:outline-none">
+                        <div class="text-amber-400 font-bold">⌨️ 黃金鍵盤</div>
+                        <div class="text-xs text-slate-400 mt-1">打字如飛的聖物</div>
+                    </button>
+                    <button type="button" onclick="selectEquipment('魔法魔杖', this)" class="equipment-btn p-3 bg-slate-800 border border-slate-700 rounded-xl text-left hover:border-amber-400 transition-all focus:outline-none">
+                        <div class="text-amber-400 font-bold">🪄 魔法魔杖</div>
+                        <div class="text-xs text-slate-400 mt-1">蘊含元素之力</div>
+                    </button>
+                    <button type="button" onclick="selectEquipment('太刀·村正', this)" class="equipment-btn p-3 bg-slate-800 border border-slate-700 rounded-xl text-left hover:border-amber-400 transition-all focus:outline-none">
+                        <div class="text-amber-400 font-bold">🗡️ 太刀·村正</div>
+                        <div class="text-xs text-slate-400 mt-1">削鐵如泥的名刃</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Skills Intro Box -->
+            <div class="bg-indigo-950/40 border border-indigo-800/50 rounded-xl p-4 space-y-2">
+                <div class="font-bold text-indigo-300 text-sm flex items-center gap-2">
+                    <span>✨ 三大戰術密技說明：</span>
+                </div>
+                <ul class="list-disc list-inside text-slate-300 space-y-1 text-xs md:text-sm">
+                    <li><strong class="text-amber-300">🔮 預知未來：</strong>看穿魔王下一回合要出的拳（限用 2 次）。</li>
+                    <li><strong class="text-amber-300">⚔️ 絕對暴擊：</strong>若此回合獲勝，直接獲得 2 勝（限用 1 次）。</li>
+                    <li><strong class="text-amber-300">💖 回血法術：</strong>減少電腦 1 分勝場，逆轉劣勢（限用 1 次）。</li>
+                </ul>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5">
+                🚀 開始冒險之旅
+            </button>
+        </div>
+
+        <!-- Screen 2: Battle Arena -->
+        <div id="battle-screen" class="hidden p-6 md:p-8 space-y-6">
+            <!-- Status Bar -->
+            <div class="flex justify-between items-center bg-slate-800/60 p-4 rounded-xl border border-slate-700">
+                <div>
+                    <div id="display-info" class="text-xs text-slate-400">冒險者：... | 裝備：...</div>
+                    <div class="text-xl font-bold text-white mt-0.5" id="display-round">第 1 回合</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs text-slate-400">當前戰況 (3勝決勝)</div>
+                    <div class="text-2xl font-black text-amber-400"><span id="player-score">0</span> : <span id="computer-score">0</span></div>
+                </div>
+            </div>
+
+            <!-- Arena Cards Display -->
+            <div class="grid grid-cols-2 gap-4 text-center py-2">
+                <div class="bg-slate-800/40 border border-slate-700 p-5 rounded-xl flex flex-col items-center justify-center relative overflow-hidden">
+                    <span class="text-xs text-slate-400 mb-2">你的出拳</span>
+                    <div id="player-choice-display" class="text-5xl my-2">❓</div>
+                    <span id="player-name-tag" class="text-sm font-bold text-amber-300">玩家</span>
+                </div>
+                <div class="bg-slate-800/40 border border-slate-700 p-5 rounded-xl flex flex-col items-center justify-center relative overflow-hidden">
+                    <span class="text-xs text-slate-400 mb-2">地下城魔王</span>
+                    <div id="computer-choice-display" class="text-5xl my-2">❓</div>
+                    <span class="text-sm font-bold text-rose-400">AI 守衛</span>
+                </div>
+            </div>
+
+            <!-- Prediction Hint Area -->
+            <div id="prediction-box" class="hidden bg-purple-950/50 border border-purple-700/60 rounded-xl p-3 text-center text-xs text-purple-200 animate-pulse">
+                🔮 【預知未來】神諭顯示：魔王下一回合將會出 <span id="predicted-move" class="font-bold text-amber-300"></span>！
+            </div>
+
+            <!-- Battle Message Box -->
+            <div id="battle-message" class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 text-center text-sm md:text-base min-h-[60px] flex items-center justify-center text-indigo-200">
+                請選擇出拳指令或施放戰術密技，迎戰魔王！
+            </div>
+
+            <!-- Controls: Basic Choices -->
+            <div class="space-y-4">
+                <div class="text-xs font-semibold text-slate-400 tracking-wider">基礎戰鬥指令</div>
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="playTurn('剪刀')" class="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-bold text-amber-400 transition-all flex flex-col items-center gap-1">
+                        <span class="text-2xl">✌️</span> 剪刀
+                    </button>
+                    <button onclick="playTurn('石頭')" class="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-bold text-amber-400 transition-all flex flex-col items-center gap-1">
+                        <span class="text-2xl">✊</span> 石頭
+                    </button>
+                    <button onclick="playTurn('布')" class="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-bold text-amber-400 transition-all flex flex-col items-center gap-1">
+                        <span class="text-2xl">✋</span> 布
+                    </button>
+                </div>
+
+                <div class="text-xs font-semibold text-slate-400 tracking-wider pt-1">特殊戰術密技</div>
+                <div class="grid grid-cols-3 gap-3">
+                    <button id="skill-predict" onclick="useSkill('predict')" class="py-2.5 px-2 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-700/60 hover:border-purple-500 rounded-xl text-xs font-bold text-purple-300 transition-all flex flex-col items-center gap-0.5">
+                        <span>🔮 預知未來 (<span id="predict-count">2</span>)</span>
+                        <span class="text-[10px] text-purple-400/80">看穿敵手</span>
+                    </button>
+                    <button id="skill-crit" onclick="useSkill('crit')" class="py-2.5 px-2 bg-gradient-to-r from-amber-900/40 to-orange-900/40 border border-amber-700/60 hover:border-amber-500 rounded-xl text-xs font-bold text-amber-300 transition-all flex flex-col items-center gap-0.5">
+                        <span>⚔️ 絕對暴擊 (<span id="crit-count">1</span>)</span>
+                        <span class="text-[10px] text-amber-400/80">贏了得 2 分</span>
+                    </button>
+                    <button id="skill-heal" onclick="useSkill('heal')" class="py-2.5 px-2 bg-gradient-to-r from-emerald-900/40 to-teal-900/40 border border-emerald-700/60 hover:border-emerald-500 rounded-xl text-xs font-bold text-emerald-300 transition-all flex flex-col items-center gap-0.5">
+                        <span>💖 回血法術 (<span id="heal-count">1</span>)</span>
+                        <span class="text-[10px] text-emerald-400/80">扣電腦 1 分</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 3: Game Over / Result & Share -->
+        <div id="gameover-screen" class="hidden p-8 text-center space-y-6">
+            <div id="result-icon" class="text-6xl mb-2">🏆</div>
+            <h2 id="result-title" class="rpg-font text-3xl text-amber-400">冒險大勝利！</h2>
+            <p id="result-desc" class="text-slate-300 text-sm max-w-md mx-auto leading-relaxed">
+                恭喜你擊敗了魔王，成為傳說中的猜拳大師！
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <button onclick="resetGame()" class="py-3 px-6 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition-all">
+                    🔄 再次挑戰
+                </button>
+                <button onclick="shareGame()" class="py-3 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                    🔗 複製戰績網址分享
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Custom Modal for Alerts (No alert/confirm used) -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div id="modal-icon" class="text-4xl">⚠️</div>
+            <p id="modal-text" class="text-slate-200 text-sm leading-relaxed">提示訊息</p>
+            <button onclick="closeModal()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all">
+                確定
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Logic Script -->
+    <script>
+        let playerName = "";
+        let equipment = "黃金鍵盤";
+        let playerWins = 0;
+        let computerWins = 0;
+        let roundNum = 1;
+        const options = ["剪刀", "石頭", "布"];
+        const choiceIcons = { "剪刀": "✌️", "石頭": "✊", "布": "✋" };
+
+        // Skills state tracking
+        let skillCounts = {
+            predict: 2,
+            crit: 1,
+            heal: 1
+        };
+
+        let nextComputerMove = "";
+
+        function selectEquipment(eq, btn) {
+            equipment = eq;
+            document.querySelectorAll('.equipment-btn').forEach(b => {
+                b.classList.remove('border-amber-400', 'bg-slate-800/90');
+                b.classList.add('bg-slate-800');
+            });
+            btn.classList.add('border-amber-400', 'bg-slate-800/90');
+        }
+
+        function showModal(text, icon = "⚠️") {
+            document.getElementById('modal-text').innerText = text;
+            document.getElementById('modal-icon').innerText = icon;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        function startGame() {
+            const inputName = document.getElementById('player-name').value.trim();
+            if (!inputName) {
+                showModal("請輸入你的冒險者名字！");
+                return;
+            }
+            playerName = inputName;
+            playerWins = 0;
+            computerWins = 0;
+            roundNum = 1;
+            skillCounts = { predict: 2, crit: 1, heal: 1 };
+            nextComputerMove = options[Math.floor(Math.random() * options.length)];
+
+            document.getElementById('display-info').innerText = `冒險者：${playerName} | 裝備：${equipment}`;
+            document.getElementById('player-name-tag').innerText = playerName;
+            
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('battle-screen').classList.remove('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            
+            updateBattleUI();
+        }
+
+        function updateBattleUI() {
+            document.getElementById('display-round').innerText = `第 ${roundNum} 回合`;
+            document.getElementById('player-score').innerText = playerWins;
+            document.getElementById('computer-score').innerText = computerWins;
+            document.getElementById('player-choice-display').innerText = "❓";
+            document.getElementById('computer-choice-display').innerText = "❓";
+            document.getElementById('prediction-box').classList.add('hidden');
+
+            // Update skill counters and opacity
+            document.getElementById('predict-count').innerText = skillCounts.predict;
+            document.getElementById('crit-count').innerText = skillCounts.crit;
+            document.getElementById('heal-count').innerText = skillCounts.heal;
+
+            document.getElementById('skill-predict').style.opacity = skillCounts.predict <= 0 ? "0.4" : "1";
+            document.getElementById('skill-crit').style.opacity = skillCounts.crit <= 0 ? "0.4" : "1";
+            document.getElementById('skill-heal').style.opacity = skillCounts.heal <= 0 ? "0.4" : "1";
+        }
+
+        function playTurn(playerChoice) {
+            let computerChoice = nextComputerMove;
+            nextComputerMove = options[Math.floor(Math.random() * options.length)];
+
+            document.getElementById('player-choice-display').innerText = choiceIcons[playerChoice];
+            document.getElementById('computer-choice-display').innerText = choiceIcons[computerChoice];
+
+            // Action animation
+            document.getElementById('player-choice-display').classList.add('animate-action');
+            document.getElementById('computer-choice-display').classList.add('animate-action');
+            setTimeout(() => {
+                document.getElementById('player-choice-display').classList.remove('animate-action');
+                document.getElementById('computer-choice-display').classList.remove('animate-action');
+            }, 400);
+
+            let message = "";
+
+            if (playerChoice === computerChoice) {
+                message = `平手！雙方都出了 ${playerChoice}，本回合無人得分。\n`;
+            } else if (
+                (playerChoice === "剪刀" && computerChoice === "布") ||
+                (playerChoice === "石頭" && computerChoice === "剪刀") ||
+                (playerChoice === "布" && computerChoice === "石頭")
+            ) {
+                if (window.critActive) {
+                    message = `💥【絕對暴擊】發動！你以【${playerChoice}】擊潰魔王的【${computerChoice}】，爆擊獲得 2 點勝場！`;
+                    playerWins += 2;
+                    window.critActive = false;
+                } else {
+                    message = `🎉 這回合你贏了！【${playerChoice}】克制了魔王的【${computerChoice}】！`;
+                    playerWins += 1;
+                }
+            } else {
+                message = `💥 這回合魔王獲勝！【${computerChoice}】克制了你的【${playerChoice}】！`;
+                computerWins += 1;
+                if (window.critActive) window.critActive = false;
+            }
+
+            document.getElementById('battle-message').innerText = message;
+            roundNum++;
+
+            setTimeout(() => {
+                if (playerWins >= 3 || computerWins >= 3) {
+                    endGame();
+                } else {
+                    updateBattleUI();
+                }
+            }, 900);
+        }
+
+        function useSkill(skillType) {
+            if (skillCounts[skillType] <= 0) {
+                showModal("此戰術密技次數已用完！");
+                return;
+            }
+
+            if (skillType === 'predict') {
+                skillCounts.predict--;
+                document.getElementById('predict-count').innerText = skillCounts.predict;
+                if (skillCounts.predict <= 0) document.getElementById('skill-predict').style.opacity = "0.4";
+
+                document.getElementById('predicted-move').innerText = nextComputerMove;
+                document.getElementById('prediction-box').classList.remove('hidden');
+                document.getElementById('battle-message').innerText = `🔮 你施放了【預知未來】！神諭已顯現魔王下一局將出 ${nextComputerMove}。請選擇你的出拳！`;
+            } else if (skillType === 'crit') {
+                skillCounts.crit--;
+                document.getElementById('crit-count').innerText = skillCounts.crit;
+                if (skillCounts.crit <= 0) document.getElementById('skill-crit').style.opacity = "0.4";
+
+                window.critActive = true;
+                document.getElementById('battle-message').innerText = `⚔️ 你啟動了【絕對暴擊】！蓄力完成，接下來這一局若獲勝將直接獲得 2 分！請出拳！`;
+            } else if (skillType === 'heal') {
+                skillCounts.heal--;
+                document.getElementById('heal-count').innerText = skillCounts.heal;
+                if (skillCounts.heal <= 0) document.getElementById('skill-heal').style.opacity = "0.4";
+
+                if (computerWins > 0) {
+                    computerWins -= 1;
+                }
+                document.getElementById('computer-score').innerText = computerWins;
+                document.getElementById('battle-message').innerText = `💖 你施放了【回血法術】！神聖治癒之力逆轉戰局，成功將電腦的勝場數減少 1 分！`;
+                
+                setTimeout(() => {
+                    if (playerWins >= 3) {
+                        endGame();
+                    } else {
+                        updateBattleUI();
+                    }
+                }, 1000);
+            }
+        }
+
+        function endGame() {
+            document.getElementById('battle-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.remove('hidden');
+
+            const resIcon = document.getElementById('result-icon');
+            const resTitle = document.getElementById('result-title');
+            const resDesc = document.getElementById('result-desc');
+
+            if (playerWins >= 3) {
+                resIcon.innerText = "🏆";
+                resTitle.innerText = "冒險大勝利！";
+                resDesc.innerText = `🏆 恭喜勇敢的冒險者【${playerName}】裝備【${equipment}】以 ${playerWins} : ${computerWins} 擊敗了地下城魔王，成為傳說中的猜拳大師！`;
+            } else {
+                resIcon.innerText = "💀";
+                resTitle.innerText = "冒險失敗...";
+                resDesc.innerText = `💀 遭到魔王以 ${computerWins} : ${playerWins} 擊退。調整好你的裝備與戰術密技，再次踏上征途吧！`;
+            }
+        }
+
+        function resetGame() {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('setup-screen').classList.remove('hidden');
+            document.getElementById('player-name').value = "";
+            window.critActive = false;
+        }
+
+        function shareGame() {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    showModal("網址與當前戰績已成功複製到剪貼簿，快分享給好友吧！", "🔗");
+                }).catch(() => {
+                    showModal("分享連結： " + window.location.href, "🔗");
+                });
+            } else {
+                showModal("分享連結： " + window.location.href, "🔗");
+            }
+        }
+    </script>
+</body>
+</html>
+```
